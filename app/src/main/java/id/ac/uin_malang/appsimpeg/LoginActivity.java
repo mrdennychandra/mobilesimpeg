@@ -7,6 +7,7 @@ import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
@@ -44,13 +45,31 @@ public class LoginActivity extends AppCompatActivity {
             startActivity(intent);
             finish();
         }
+
+        btnLogin.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View v) {
+                String username = email.getText().toString();
+                String password = mPassword.getText().toString();
+                if (username.equals("")) {
+                    email.setError("email harus diisi");
+                    return;
+                }
+                if (mPassword.equals("")) {
+                    email.setError("password harus diisi");
+                    return;
+                }
+                login(username, password);
+            }
+
+        });
     }
 
     private void login(String username, String password) {
         Call<User> call = api.login(username, password);
         mProgressDialog = new ProgressDialog(this);
         mProgressDialog.setIndeterminate(true);
-        mProgressDialog.setMessage("loading...");
+        mProgressDialog.setMessage("authenticating...");
         mProgressDialog.show();
         call.enqueue(new Callback<User>() {
             @Override
