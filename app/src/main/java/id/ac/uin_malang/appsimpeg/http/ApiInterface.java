@@ -5,6 +5,7 @@ import java.util.List;
 import okhttp3.MultipartBody;
 import okhttp3.RequestBody;
 import retrofit2.Call;
+import retrofit2.http.Field;
 import retrofit2.http.FormUrlEncoded;
 import retrofit2.http.GET;
 import retrofit2.http.Multipart;
@@ -45,4 +46,8 @@ public interface ApiInterface {
                                 @Part("iddivisi") RequestBody iddivisi,
                                 @Part("id") RequestBody id
     );
+
+    @FormUrlEncoded
+    @POST("Login/login")
+    Call<User> login(@Field("identity") String username, @Field("password") String password);
 }

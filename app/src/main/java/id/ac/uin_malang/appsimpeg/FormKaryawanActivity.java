@@ -17,11 +17,13 @@ import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.app.NavUtils;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -73,7 +75,6 @@ public class FormKaryawanActivity extends AppCompatActivity {
     private ApiInterface api;
     ProgressDialog mProgressDialog;
     String tglLahirDb = "";
-    String[] divStr = {};
 
     //foto
     private static final int CAMERA_REQUEST_CODE = 100;
@@ -87,6 +88,7 @@ public class FormKaryawanActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_form_karyawan);
         setTitle("Form Karyawan");
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         txtNama = (EditText) findViewById(R.id.txt_nama);
         txtEmail = (EditText) findViewById(R.id.txt_email);
         txtTelpon = (EditText) findViewById(R.id.txt_telpon);
@@ -104,33 +106,31 @@ public class FormKaryawanActivity extends AppCompatActivity {
             txtEmail.setText(karyawan.email);
             txtTelpon.setText(karyawan.telpon);
             txtTglLahir.setText(karyawan.tgllahir);
-            for (int i = 0; i < divStr.length; i++) {
-                if (divisis.get(i).nama.equals(karyawan.namadivisi)) {
-                    spDivisi.setSelection(i);
-                }
-            }
             if (karyawan.jeniskelamin.equalsIgnoreCase("L")) {
                 rbL.setSelected(true);
             } else{
                 rbP.setSelected(true);
             }
-            Glide.with(this).load(BASE_IMAGE + karyawan.foto).into(imgPath);
+            //Glide.with(this).load(BASE_IMAGE + karyawan.foto)
+                    //.into(imgPath);
             //simpan gambar di internal storage
             Glide.with(this)
                     .asBitmap()
-                    .load(karyawan.foto)
+                    .load(BASE_IMAGE + karyawan.foto)
                     .into(new SimpleTarget<Bitmap>() {
                         @Override
                         public void onResourceReady(@NonNull Bitmap resource,
                                                     @Nullable com.bumptech.glide.request.transition.Transition
                                                             <? super Bitmap> transition) {
+                            imgPath.setImageBitmap(resource);
                             imagePath = saveImage(resource, karyawan.id);
+                            //Toast.makeText(FormKaryawanActivity.this,imagePath,Toast.LENGTH_SHORT).show();
                         }
 
                     });
         }
         api = RestClient.getClient().create(ApiInterface.class);
-        getData();
+        getDivisi();
         txtTglLahir.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -174,15 +174,8 @@ public class FormKaryawanActivity extends AppCompatActivity {
                     karyawan.foto = imagePath;
                     karyawan.jeniskelamin = rbJk.getText().toString();
                     karyawan.telpon = txtTelpon.getText().toString();
-                    int i = 0;
-                    int strIdx = 0;
-                    for (String str : divStr) {
-                        if (str.equals(rbJk.getText().toString())) {
-                            strIdx = i;
-                        }
-                        i++;
-                    }
-                    karyawan.iddivisi = divisis.get(strIdx).id;
+                    Divisi selectedItem = (Divisi) spDivisi.getSelectedItem();
+                    karyawan.iddivisi = selectedItem.id;
                     insert(karyawan);
                 } else {
                     //update
@@ -192,15 +185,8 @@ public class FormKaryawanActivity extends AppCompatActivity {
                     karyawan.foto = imagePath;
                     karyawan.jeniskelamin = rbJk.getText().toString();
                     karyawan.telpon = txtTelpon.getText().toString();
-                    int i = 0;
-                    int strIdx = 0;
-                    for (String str : divStr) {
-                        if (str.equals(rbJk.getText().toString())) {
-                            strIdx = i;
-                        }
-                        i++;
-                    }
-                    karyawan.iddivisi = divisis.get(strIdx).id;
+                    Divisi selectedItem = (Divisi) spDivisi.getSelectedItem();
+                    karyawan.iddivisi = selectedItem.id;
                     update(karyawan);
                 }
             }
@@ -231,7 +217,7 @@ public class FormKaryawanActivity extends AppCompatActivity {
 
     }
 
-    private void getData() {
+    private void getDivisi() {
         Call<List<Divisi>> call = api.getDivisi();
         call.enqueue(new Callback<List<Divisi>>() {
             @Override
@@ -239,16 +225,15 @@ public class FormKaryawanActivity extends AppCompatActivity {
                     response) {
                 divisis = response.body();
                 //divisis get API
-                divStr = new String[divisis.size()];
-                int i = 0;
-                for (Divisi divisi : divisis) {
-                    divStr[i] = divisi.nama;
-                    i++;
-                }
-                ArrayAdapter<String> spinnerArrayAdapter = new ArrayAdapter<String>(FormKaryawanActivity.this,
-                        android.R.layout.simple_spinner_item, divStr);
+                ArrayAdapter<Divisi> spinnerArrayAdapter = new ArrayAdapter<Divisi>(FormKaryawanActivity.this,
+                        android.R.layout.simple_spinner_item, divisis);
                 spinnerArrayAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item); // The drop down view
                 spDivisi.setAdapter(spinnerArrayAdapter);
+                for (int i = 0; i < divisis.size(); i++) {
+                    if (divisis.get(i).nama.equals(karyawan.namadivisi)) {
+                        spDivisi.setSelection(i);
+                    }
+                }
             }
 
             @Override
@@ -482,7 +467,8 @@ public class FormKaryawanActivity extends AppCompatActivity {
             savedImagePath = imageFile.getAbsolutePath();
             try {
                 OutputStream fOut = new FileOutputStream(imageFile);
-                image.compress(Bitmap.CompressFormat.JPEG, 100, fOut);
+                //perkecil
+                image.compress(Bitmap.CompressFormat.JPEG, 60, fOut);
                 fOut.close();
             } catch (Exception e) {
                 e.printStackTrace();
@@ -500,5 +486,17 @@ public class FormKaryawanActivity extends AppCompatActivity {
         Uri contentUri = Uri.fromFile(f);
         mediaScanIntent.setData(contentUri);
         sendBroadcast(mediaScanIntent);
+    }
+
+    //back button diatas
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            // Respond to the action bar's Up/Home button
+            case android.R.id.home:
+                NavUtils.navigateUpFromSameTask(this);
+                return true;
+        }
+        return super.onOptionsItemSelected(item);
     }
 }

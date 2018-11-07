@@ -19,4 +19,8 @@ public class Divisi implements Serializable
     public String nama;
     private final static long serialVersionUID = 8648473454666531202L;
 
+    @Override
+    public String toString() {
+        return nama;
+    }
 }
