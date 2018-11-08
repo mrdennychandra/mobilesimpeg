@@ -217,6 +217,7 @@ public class FormKaryawanActivity extends AppCompatActivity {
 
     }
 
+    //mendapatkan divisi
     private void getDivisi() {
         Call<List<Divisi>> call = api.getDivisi();
         call.enqueue(new Callback<List<Divisi>>() {
@@ -244,6 +245,7 @@ public class FormKaryawanActivity extends AppCompatActivity {
         });
     }
 
+    ////////////////////////////////////////// camera/gallery //////////////////////////////////////////
     //foto
     private void chooseDialog() {
         CharSequence menu[] = new CharSequence[]{"Take From Galery", "Open Camera"};
@@ -261,22 +263,6 @@ public class FormKaryawanActivity extends AppCompatActivity {
         });
         builder.show();
 
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == CAMERA_REQUEST_CODE) {
-            if (resultCode == RESULT_OK) {
-                imgPath.setImageURI(file);
-                imagePath = file.getPath();
-            }
-        } else {
-            if (resultCode == RESULT_OK) {
-                imgPath.setImageURI(data.getData());
-                imagePath = getRealPathFromURI(this, data.getData());
-            }
-        }
-        Toast.makeText(this, imagePath, Toast.LENGTH_SHORT).show();
     }
 
     //camera
@@ -309,6 +295,7 @@ public class FormKaryawanActivity extends AppCompatActivity {
         startActivityForResult(intent, GALLERY_REQUEST_CODE);
     }
 
+
     private String getRealPathFromURI(Context context, Uri contentUri) {
         Cursor cursor = null;
         try {
@@ -325,6 +312,60 @@ public class FormKaryawanActivity extends AppCompatActivity {
                 cursor.close();
             }
         }
+    }
+
+    private String saveImage(Bitmap image, String fileName) {
+        String savedImagePath = null;
+        String imageFileName = "JPEG_" + fileName + ".jpg";
+        File storageDir = new File(Environment
+                .getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
+                + "");
+        boolean success = true;
+        if (!storageDir.exists()) {
+            success = storageDir.mkdirs();
+        }
+        if (success) {
+            File imageFile = new File(storageDir, imageFileName);
+            savedImagePath = imageFile.getAbsolutePath();
+            try {
+                OutputStream fOut = new FileOutputStream(imageFile);
+                //perkecil
+                image.compress(Bitmap.CompressFormat.JPEG, 60, fOut);
+                fOut.close();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            // Add the image to the system gallery
+            galleryAddPic(savedImagePath);
+            //Toast.makeText(DetailEventActivity.this, "IMAGE SAVED", Toast.LENGTH_LONG).show();
+        }
+        return savedImagePath;
+    }
+
+    private void galleryAddPic(String imagePath) {
+        Intent mediaScanIntent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
+        File f = new File(imagePath);
+        Uri contentUri = Uri.fromFile(f);
+        mediaScanIntent.setData(contentUri);
+        sendBroadcast(mediaScanIntent);
+    }
+
+    ////////////////////////////////////////// camera/gallery //////////////////////////////////////////
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == CAMERA_REQUEST_CODE) {
+            if (resultCode == RESULT_OK) {
+                imgPath.setImageURI(file);
+                imagePath = file.getPath();
+            }
+        } else {
+            if (resultCode == RESULT_OK) {
+                imgPath.setImageURI(data.getData());
+                imagePath = getRealPathFromURI(this, data.getData());
+            }
+        }
+        Toast.makeText(this, imagePath, Toast.LENGTH_SHORT).show();
     }
 
     private void insert(final Karyawan karyawan) {
@@ -450,42 +491,6 @@ public class FormKaryawanActivity extends AppCompatActivity {
                 }
             }
         });
-    }
-
-    private String saveImage(Bitmap image, String fileName) {
-        String savedImagePath = null;
-        String imageFileName = "JPEG_" + fileName + ".jpg";
-        File storageDir = new File(Environment
-                .getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
-                + "");
-        boolean success = true;
-        if (!storageDir.exists()) {
-            success = storageDir.mkdirs();
-        }
-        if (success) {
-            File imageFile = new File(storageDir, imageFileName);
-            savedImagePath = imageFile.getAbsolutePath();
-            try {
-                OutputStream fOut = new FileOutputStream(imageFile);
-                //perkecil
-                image.compress(Bitmap.CompressFormat.JPEG, 60, fOut);
-                fOut.close();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            // Add the image to the system gallery
-            galleryAddPic(savedImagePath);
-            //Toast.makeText(DetailEventActivity.this, "IMAGE SAVED", Toast.LENGTH_LONG).show();
-        }
-        return savedImagePath;
-    }
-
-    private void galleryAddPic(String imagePath) {
-        Intent mediaScanIntent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
-        File f = new File(imagePath);
-        Uri contentUri = Uri.fromFile(f);
-        mediaScanIntent.setData(contentUri);
-        sendBroadcast(mediaScanIntent);
     }
 
     //back button diatas
